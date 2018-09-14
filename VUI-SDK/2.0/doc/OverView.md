@@ -21,4 +21,4 @@ VUISDK_V1.0 简介
 项目工作原理
 =
 
-![image.png](https://github.com/271766152/docs/blob/master/VUI-SDK/2.0/doc/img/ai.png)
+![image.png](https://github.com/271766152/docs/blob/master/VUI-SDK/2.0/doc/img/%E6%B5%81%E7%A8%8B%E5%9B%BE.png)
