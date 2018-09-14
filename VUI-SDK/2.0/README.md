@@ -1,5 +1,5 @@
 
-README VUISDK_V1.0
+README VUISDK_V2.0
 =
 
 ### Table of Contents
