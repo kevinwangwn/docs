@@ -20,7 +20,7 @@ Demo
 *如下图：*  
 *注 ：在使用之前需要输入SN号，以便我们为您授权使用SDK。*  
 
-![](https://github.com/271766152/docs/blob/master/VUI-SDK/2.0/doc/img/demo1.png)  
+![](https://github.com/271766152/docs/blob/master/VUI-SDK/2.0/doc/img/demo-1.png)  
 
 
 
