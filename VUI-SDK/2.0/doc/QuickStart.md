@@ -2,7 +2,7 @@
 快速开始
 =
 
-- **现在以模式二为例开始我们的Demo。  
+- **现在以模式二 VAD+ASR+TTS 为例开始我们的Demo。  
 目前SDK是以aar形式提供，所以需要使用Android Studio开发。把"ratn-release-xx-online.aar"拷贝到Libs文件夹下。在muoudle的build.gradle文件中添加。**
 
 ``` gradle
@@ -16,111 +16,197 @@ dependencies {
 ```
 - **我们需要你创建一个带有按钮的页面，就像这样**  
 
-![image.png](https://upload-images.jianshu.io/upload_images/11080649-b5a3d5be07ea6582.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](https://github.com/271766152/docs/blob/master/VUI-SDK/2.0/doc/img/demo2.png)
 
-- **然后我们需要初始化我们的VUI**  
+- **先从oncreate开始**  
 ```Java
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mode_vad);
-        initSDK();
+
         initView();
+        initVUIParam(getIntent().getStringExtra(DemoMainActivity.DEVICE_ID));
     }
 ``` 
-- **initSDK()
-初始化之前，需要先初始化参数。像这样**  
-```Java
-    private void initSDK(){
-        VUIApi.InitParam.InitParamBuilder builder = new VUIApi.InitParam.InitParamBuilder();
 
-        boolean isUseOnlineTTS = true;//设置TTS是否使用在线模式
-        if (isUseOnlineTTS) {
-            ttsType = RTTSPlayer.TTSType.TYPE_ONLINE;
-        } else {
-            ttsType = RTTSPlayer.TTSType.TYPE_OFFLINE;
-        }
-
-        builder.setLanguage("cmn-CHN")
-                .setTTSType(ttsType)
-                .setVUIType(VUIApi.VUIType.AUTO)
-                .setAudioGenerator(new CustomAndroidAudioGenerator());
-
-        mVUIApi = VUIApi.getInstance();
-        mVUIApi.init(this, builder.build(), mInitListener);//绑定初始化监听器
-    }
-```
 - **接下来**  
 ```Java
    private void initView() {
-        mASRResultText = (TextView) findViewById(R.id.result_vad_mode);
-        mStartBtn = (Button) findViewById(R.id.btn_start_vad_mode);
-        mStartBtn.setOnClickListener(new View.OnClickListener() {
+        asrResultText = (TextView) findViewById(R.id.result_vad_mode);
+        btnStart = (Button) findViewById(R.id.btn_start_vad_mode);
+        btnStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (!isRecording) {
                     isRecording = true;
-                    mStartBtn.setText("点击结束识别");
+                    btnStart.setText("点击结束识别");
                     //开始识别
-                    AutoTypeController controller = (AutoTypeController) mVUIApi.startRecognize();
-                    controller.manualWakeup();
+                    AutoTypeController controller = (AutoTypeController) vuiApi.startRecognize();
+                    //开始识别后，将控制器设置成已经唤醒的状态
+                    if (controller instanceof AutoTypeController) {
+                        ((AutoTypeController) controller).manualWakeup();
+                    }
                 } else {
-                    mStartBtn.setText("点击开始识别");
+                    btnStart.setText("点击开始识别");
                     isRecording = false;
                     //结束识别
-                    mVUIApi.stopRecognize();
+                    vuiApi.stopRecognize();
                 }
             }
         });
     }
 ```
+
+- **initVUIParam(String deviceID)
+初始化之前，需要先初始化参数。像这样**  
+```Java
+    private void initVUIParam(String deviceID) {
+        Log.d(TAG, "deviceID= " + deviceID);
+        UserInfo userInfo = new UserInfo();
+        userInfo.setDeviceID(deviceID); //必须设置此字段
+
+        VUIApi.InitParam.InitParamBuilder builder = new VUIApi.InitParam.InitParamBuilder();
+
+        builder.setUserInfo(userInfo)  //设置用户信息，必须设置
+                .setAudioGenerator(new CustomAndroidAudioGenerator()) // 设置音频源
+                .addOfflineFileName("test_offline") //设置离线词文件
+                .setTTSType(RTTSPlayer.TTSType.TYPE_ONLINE)  //设置语音合成方式,默认是离线
+                .setVUIType(VUIApi.VUIType.AUTO);  //设置交互方式，AUTO（唤醒后自动开启cloud识别 ， 说唤醒词开始， 包含 vad , 直到手动停止）
+
+        vuiApi = VUIApi.getInstance();
+        vuiApi.init(this, builder.build(), initListener);//绑定初始化监听器
+    }
+```
+
 - **重要的监听器  
 InitListener  初始化回调**  
 ```Java 
-    InitListener mInitListener = new InitListener() {
-
+    InitListener initListener = new InitListener() {
         @Override
         public void onSuccess() {
+            btnStart.setClickable(true);
+            handler.obtainMessage(MSG_TTS_PLAYER, "初始化成功，现在可以使用识别功能了").sendToTarget();
+            vuiApi.setASRListener(asrListener);//绑定ASR监听器,没有AI结果；
+            vuiApi.setOnAIResponseListener(aiResponseListener); //绑定AI监听器；如果不需要AI结果，可以不设置
+            reprotLocation(); //上报wifi信息，用于识别中用到位置信息
+
         }
 
         @Override
         public void onFail(RError message) {
+            Toast.makeText(VADModeActivity.this, "初始化失败！！！message = " + message.getFailDetail(), Toast.LENGTH_SHORT).show();
         }
     };
 ```
+
+- **reprotLocation() 不用担心，我们只是用它来得到您的大体位置，然后我们的AI才能知道您想干什么。比如：您说今天天气怎么样？**
+```Java
+    /**
+     * reprotLocation wifi信息，只有上报了wifi信息，当用户查询跟位置相关的信息时才会返回结果，比如：今天的天气怎么样
+     */
+    private void reprotLocation() {
+        WifiManager wifiManager = (WifiManager) getApplication().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        vuiApi.reportLocationInfo(wifiManager.getScanResults());
+    }
+```
+
 - **RASRListener 识别结果回调**  
 ```Java
-    RASRListener mASRListener = new RASRListener() {
-
+   //设置ASR回调接口。ASR返回的结果都在此接口中回调,不带AI。
+    RASRListener asrListener = new RASRListener() {
         @Override
         public void onASRResult(ASRResult result) {
-            String restText = "[识别结果]:" + result.getResultText();
+            //如果是需要带AI的结果，此回调结果可以不做处理；
+            Log.d(TAG, "ASRResult " + (result.getResultType() == ASRResult.TYPE_OFFLINE ? "offline " : " online ") + " text " + result.getResultText());
+//                handler.obtainMessage(MSG_SHOW_RESULT, result.getResultText()).sendToTarget();
         }
 
         @Override
         public void onFail(RError message) {
+            Log.e(TAG, "asr error: " + message.getFailDetail());
         }
 
         @Override
         public void onWakeUp(String json) {
+            Log.e(TAG, "asr wakeup: " + json);
         }
 
         @Override
         public void onEvent(EventType event) {
+            Log.e(TAG, "asr onEvent: " + event.toString());
         }
     };
 ```
 - **OnAIResponseListener  AI语义结果回调**  
 ```Java
-    OnAIResponseListener mAIResponseListener = new OnAIResponseListener() {
-
+    //设置AI回调接口。AI返回的结果都在此接口中回调，如果不需要AI结果，可以不设置此回调接口。
+    OnAIResponseListener aiResponseListener = new OnAIResponseListener() {
         @Override
-        public void onResult(String AI_JSON) {
+        public void onResult(String json) {
+            Log.e(TAG, "ai json: " + json);
+            handler.obtainMessage(MSG_SHOW_RESULT, json).sendToTarget();
         }
 
         @Override
         public void onFail(RError message) {
+            Log.e(TAG, "ai fail: " + message.getFailDetail());
         }
     };
 ```
+- **当然还有我们的TTS**
+```Java
+/**
+     * ttsSpeak 播放tts
+     *
+     * @param message tts播放的内容
+     */
+    private void ttsSpeak(String message) {
+        vuiApi.speak(message, new RTTSListener() {
+
+            @Override
+            public void onSpeakBegin() {
+                Log.d(TAG, "onSpeakBegin");
+                Toast.makeText(getApplicationContext(), "speak", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onCompleted() {
+                Log.d(TAG, "onCompleted");
+                handler.obtainMessage(MSG_INIT_COMPLETE).sendToTarget();
+            }
+
+            @Override
+            public void onError(int code) {
+                Log.e(TAG, "onError " + code);
+            }
+        });
+    }
+```
+
+- **我们的handler**
+```Java
+    private Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case MSG_SHOW_RESULT:
+                    asrResultText.setText((String) msg.obj);
+                    break;
+                case MSG_TTS_PLAYER:
+                    ttsSpeak((String) msg.obj);
+                    break;
+                case MSG_INIT_COMPLETE:
+                    btnStart.setText(getString(R.string.start_vad_mode));
+                    btnStart.setEnabled(true);
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
+```
+
+
 - **现在就可以运行你的App体验效果了。Have Fun！:blush:**  
