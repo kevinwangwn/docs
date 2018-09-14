@@ -6,19 +6,19 @@
 目前SDK是以aar形式提供，所以需要使用Android Studio开发。把"ratn-release-xx-online.aar"拷贝到Libs文件夹下。在muoudle的build.gradle文件中添加。**
 
 ``` gradle
-repositories {
-    flatDir { dirs 'libs' }
-}
+    repositories {
+        flatDir { dirs 'libs' }
+    }
 
-dependencies {
-    compile(name:'ratn-release-1.0-online',ext:'aar')
-}
+    dependencies {
+        compile(name:'ratn-release-1.0-online',ext:'aar')
+    }
 ```
 - **我们需要你创建一个带有按钮的页面，就像这样**  
 
 ![image.png](https://github.com/271766152/docs/blob/master/VUI-SDK/2.0/doc/img/demo2.png)
 
-- **先从oncreate开始**  
+- **先从onCreate开始**  
 ```Java
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -68,11 +68,11 @@ dependencies {
 
         VUIApi.InitParam.InitParamBuilder builder = new VUIApi.InitParam.InitParamBuilder();
 
-        builder.setUserInfo(userInfo)  //设置用户信息，必须设置
-                .setAudioGenerator(new CustomAndroidAudioGenerator()) // 设置音频源
-                .addOfflineFileName("test_offline") //设置离线词文件
-                .setTTSType(RTTSPlayer.TTSType.TYPE_ONLINE)  //设置语音合成方式,默认是离线
-                .setVUIType(VUIApi.VUIType.AUTO);  //设置交互方式，AUTO（唤醒后自动开启cloud识别 ， 说唤醒词开始， 包含 vad , 直到手动停止）
+        builder.setUserInfo(userInfo)//设置用户信息，必须设置
+                .setAudioGenerator(new CustomAndroidAudioGenerator())//设置音频源
+                .addOfflineFileName("test_offline")//设置离线词文件
+                .setTTSType(RTTSPlayer.TTSType.TYPE_ONLINE)//设置语音合成方式,默认是离线
+                .setVUIType(VUIApi.VUIType.AUTO);//设置交互方式，AUTO（唤醒后自动开启cloud识别，说唤醒词开始，包含VAD, 直到手动停止）
 
         vuiApi = VUIApi.getInstance();
         vuiApi.init(this, builder.build(), initListener);//绑定初始化监听器
@@ -95,7 +95,10 @@ InitListener  初始化回调**
 
         @Override
         public void onFail(RError message) {
-            Toast.makeText(VADModeActivity.this, "初始化失败！！！message = " + message.getFailDetail(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(
+                VADModeActivity.this, 
+                "初始化失败！！！message = " + message.getFailDetail(),
+                Toast.LENGTH_SHORT).show();
         }
     };
 ```
@@ -106,7 +109,8 @@ InitListener  初始化回调**
      * reprotLocation wifi信息，只有上报了wifi信息，当用户查询跟位置相关的信息时才会返回结果，比如：今天的天气怎么样
      */
     private void reprotLocation() {
-        WifiManager wifiManager = (WifiManager) getApplication().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        WifiManager wifiManager = (WifiManager) getApplication().getApplicationContext()
+            .getSystemService(Context.WIFI_SERVICE);
         vuiApi.reportLocationInfo(wifiManager.getScanResults());
     }
 ```
