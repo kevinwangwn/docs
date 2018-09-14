@@ -15,6 +15,7 @@
     }
 ```
 - **我们需要你创建一个带有按钮的页面，就像这样**  
+*注：deveceID需要您来告诉我。可以查看如何[申请SN号](https://github.com/271766152/docs/blob/master/VUI-SDK/2.0/doc/%E8%B4%A6%E5%8F%B7%E7%94%B3%E8%AF%B7%E6%96%B9%E6%B3%95.md)。*
 
 ![image.png](https://github.com/271766152/docs/blob/master/VUI-SDK/2.0/doc/img/demo2.png)
 
