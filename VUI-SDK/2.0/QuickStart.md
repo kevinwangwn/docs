@@ -1,5 +1,6 @@
 
-## 4. 快速开始
+快速开始
+=
 
 - **现在以模式二为例开始我们的Demo。  
 目前SDK是以aar形式提供，所以需要使用Android Studio开发。把"ratn-release-xx-online.aar"拷贝到Libs文件夹下。在muoudle的build.gradle文件中添加。**
